@@ -1,0 +1,114 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user details and preferences.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the user." },
+        "email": { "type": "string", "format": "email", "description": "Email address of the user." },
+        "bio": { "type": "string", "description": "User's biography." },
+        "joinedDate": { "type": "string", "format": "date-time", "description": "When the user joined." },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "theme": { "type": "string", "enum": ["light", "dark"] },
+            "notifications": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["name", "email", "joinedDate"]
+    },
+    "Habit": {
+      "title": "Habit",
+      "description": "A daily habit to track.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "streak": { "type": "integer" },
+        "completed": { "type": "boolean" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "userId", "createdAt"]
+    },
+    "RoutineTask": {
+      "title": "Routine Task",
+      "description": "A scheduled task in the planner.",
+      "type": "object",
+      "properties": {
+        "time": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["health", "work", "learning", "personal"] },
+        "completed": { "type": "boolean" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["time", "title", "category", "userId", "createdAt"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "A long-term goal with milestones.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "progress": { "type": "integer" },
+        "deadline": { "type": "string", "format": "date" },
+        "category": { "type": "string" },
+        "milestones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "completed": { "type": "boolean" }
+            }
+          }
+        },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "userId", "createdAt"]
+    },
+    "JournalEntry": {
+      "title": "Journal Entry",
+      "description": "A daily reflection.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "mood": { "type": "string", "enum": ["great", "good", "okay", "bad"] },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "date": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      },
+      "required": ["content", "mood", "date", "userId"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile data."
+    },
+    "habits/{habitId}": {
+      "schema": "Habit",
+      "description": "User habits."
+    },
+    "routineTasks/{taskId}": {
+      "schema": "RoutineTask",
+      "description": "Planner tasks."
+    },
+    "goals/{goalId}": {
+      "schema": "Goal",
+      "description": "User goals."
+    },
+    "journals/{journalId}": {
+      "schema": "JournalEntry",
+      "description": "Journal entries."
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Novus: Personal Growth System",
+  "description": "An all-in-one personal growth system featuring habit tracking, routine scheduling, journaling, and AI-powered advice.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
