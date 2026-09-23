@@ -1,64 +1,12 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: users/{userId}
-    // Document ID: userId (from Auth)
-    // Fields:
-    //   - name: string (required)
-    //   - email: string (required, email format)
-    //   - bio: string (optional)
-    //   - joinedDate: timestamp (required)
-    //   - preferences: map (optional)
-    //
-    // Collection: habits/{habitId}
-    // Fields:
-    //   - name: string (required)
-    //   - streak: number (required)
-    //   - completed: bool (required)
-    //   - icon: string (optional)
-    //   - color: string (optional)
-    //   - userId: string (required, matches Auth)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: routineTasks/{taskId}
-    // Fields:
-    //   - time: string (required)
-    //   - title: string (required)
-    //   - category: string (required, enum)
-    //   - completed: bool (required)
-    //   - priority: string (required, enum)
-    //   - userId: string (required, matches Auth)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: goals/{goalId}
-    // Fields:
-    //   - title: string (required)
-    //   - description: string (optional)
-    //   - progress: number (required)
-    //   - deadline: string (optional, date)
-    //   - category: string (optional)
-    //   - milestones: list (optional)
-    //   - userId: string (required, matches Auth)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: journals/{journalId}
-    // Fields:
-    //   - content: string (required)
-    //   - mood: string (required, enum)
-    //   - tags: list (optional)
-    //   - date: timestamp (required)
-    //   - userId: string (required, matches Auth)
-    //
-    // ===============================================================
-
-    // ===============================================================
     // Helper Functions
     // ===============================================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -68,15 +16,18 @@ service cloud.firestore {
     }
 
     function isDocOwner() {
-      return isAuthenticated() && request.auth.uid == resource.data.userId;
+      return isAuthenticated() &&
+             resource.data.userId == request.auth.uid;
     }
 
     function isNewDocOwner() {
-      return isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      return isAuthenticated() &&
+             request.resource.data.userId == request.auth.uid;
     }
 
     function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+      return email is string &&
+             email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
     }
 
     function hasOnlyAllowedFields(fields) {
@@ -85,34 +36,52 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-          (request.auth.token.email == "saipavani175@gmail.com" && request.auth.token.email_verified == true));
+        (
+          (request.auth.token.email == "saipavani175@gmail.com" &&
+           request.auth.token.email_verified == true)
+          ||
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"
+        );
     }
 
     // ===============================================================
-    // Domain Validators
+    // Validators
     // ===============================================================
 
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['name', 'email', 'bio', 'joinedDate', 'preferences', 'role']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+      return hasOnlyAllowedFields(
+               ['name', 'email', 'bio', 'joinedDate', 'preferences', 'role']
+             ) &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.name.size() < 100 &&
              isValidEmail(data.email) &&
              data.joinedDate is timestamp;
     }
 
     function isValidHabit(data) {
-      return hasOnlyAllowedFields(['name', 'streak', 'completed', 'icon', 'color', 'userId', 'createdAt']) &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.streak is int && data.streak >= 0 &&
+      return hasOnlyAllowedFields(
+               ['name', 'streak', 'completed', 'icon', 'color', 'userId', 'createdAt']
+             ) &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.name.size() < 100 &&
+             data.streak is int &&
+             data.streak >= 0 &&
              data.completed is bool &&
              data.userId is string &&
              data.createdAt is timestamp;
     }
 
     function isValidRoutineTask(data) {
-      return hasOnlyAllowedFields(['time', 'title', 'category', 'completed', 'priority', 'userId', 'createdAt']) &&
+      return hasOnlyAllowedFields(
+               ['time', 'title', 'category', 'completed', 'priority', 'userId', 'createdAt']
+             ) &&
              data.time is string &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.title is string &&
+             data.title.size() > 0 &&
+             data.title.size() < 200 &&
              data.category in ['health', 'work', 'learning', 'personal'] &&
              data.completed is bool &&
              data.priority in ['low', 'medium', 'high'] &&
@@ -121,60 +90,125 @@ service cloud.firestore {
     }
 
     function isValidGoal(data) {
-      return hasOnlyAllowedFields(['title', 'description', 'progress', 'deadline', 'category', 'milestones', 'userId', 'createdAt']) &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
-             data.progress is int && data.progress >= 0 && data.progress <= 100 &&
+      return hasOnlyAllowedFields(
+               ['title', 'description', 'progress', 'deadline', 'category', 'milestones', 'userId', 'createdAt']
+             ) &&
+             data.title is string &&
+             data.title.size() > 0 &&
+             data.title.size() < 200 &&
+             data.progress is int &&
+             data.progress >= 0 &&
+             data.progress <= 100 &&
              data.userId is string &&
              data.createdAt is timestamp;
     }
 
     function isValidJournal(data) {
-      return hasOnlyAllowedFields(['content', 'mood', 'tags', 'date', 'userId']) &&
-             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+      return hasOnlyAllowedFields(
+               ['content', 'mood', 'tags', 'date', 'userId']
+             ) &&
+             data.content is string &&
+             data.content.size() > 0 &&
+             data.content.size() < 5000 &&
              data.mood in ['great', 'good', 'okay', 'bad'] &&
              data.userId is string &&
              data.date is timestamp;
     }
 
     // ===============================================================
-    // Rules
+    // Users
     // ===============================================================
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+
+      allow create: if isOwner(userId) &&
+                    isValidUser(request.resource.data) &&
+                    (
+                      request.resource.data.role == 'user' ||
+                      isAdmin()
+                    );
+
+      allow update: if isOwner(userId) &&
+                    isValidUser(request.resource.data) &&
+                    (
+                      request.resource.data.role == resource.data.role ||
+                      isAdmin()
+                    );
     }
+
+    // ===============================================================
+    // Habits
+    // ===============================================================
 
     match /habits/{habitId} {
       allow read: if isDocOwner() || isAdmin();
-      allow create: if isNewDocOwner() && isValidHabit(request.resource.data);
-      allow update: if isDocOwner() && isNewDocOwner() && isValidHabit(request.resource.data);
+
+      allow create: if isNewDocOwner() &&
+                    isValidHabit(request.resource.data);
+
+      allow update: if isDocOwner() &&
+                    isNewDocOwner() &&
+                    isValidHabit(request.resource.data);
+
       allow delete: if isDocOwner() || isAdmin();
     }
+
+    // ===============================================================
+    // Routine Tasks
+    // ===============================================================
 
     match /routineTasks/{taskId} {
       allow read: if isDocOwner() || isAdmin();
-      allow create: if isNewDocOwner() && isValidRoutineTask(request.resource.data);
-      allow update: if isDocOwner() && isNewDocOwner() && isValidRoutineTask(request.resource.data);
+
+      allow create: if isNewDocOwner() &&
+                    isValidRoutineTask(request.resource.data);
+
+      allow update: if isDocOwner() &&
+                    isNewDocOwner() &&
+                    isValidRoutineTask(request.resource.data);
+
       allow delete: if isDocOwner() || isAdmin();
     }
+
+    // ===============================================================
+    // Goals
+    // ===============================================================
 
     match /goals/{goalId} {
       allow read: if isDocOwner() || isAdmin();
-      allow create: if isNewDocOwner() && isValidGoal(request.resource.data);
-      allow update: if isDocOwner() && isNewDocOwner() && isValidGoal(request.resource.data);
+
+      allow create: if isNewDocOwner() &&
+                    isValidGoal(request.resource.data);
+
+      allow update: if isDocOwner() &&
+                    isNewDocOwner() &&
+                    isValidGoal(request.resource.data);
+
       allow delete: if isDocOwner() || isAdmin();
     }
+
+    // ===============================================================
+    // Journals
+    // ===============================================================
 
     match /journals/{journalId} {
       allow read: if isDocOwner() || isAdmin();
-      allow create: if isNewDocOwner() && isValidJournal(request.resource.data);
-      allow update: if isDocOwner() && isNewDocOwner() && isValidJournal(request.resource.data);
+
+      allow create: if isNewDocOwner() &&
+                    isValidJournal(request.resource.data);
+
+      allow update: if isDocOwner() &&
+                    isNewDocOwner() &&
+                    isValidJournal(request.resource.data);
+
       allow delete: if isDocOwner() || isAdmin();
     }
 
+    // ===============================================================
     // Default deny
+    // ===============================================================
+
     match /{document=**} {
       allow read, write: if false;
     }
