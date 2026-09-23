@@ -1,216 +1,76 @@
+```text
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-
-    function isAuthenticated() {
+    function signedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function ownsUser(userId) {
+      return signedIn() && request.auth.uid == userId;
     }
 
-    function isDocOwner() {
-      return isAuthenticated() &&
+    function ownsDocument() {
+      return signedIn() &&
              resource.data.userId == request.auth.uid;
     }
 
-    function isNewDocOwner() {
-      return isAuthenticated() &&
+    function ownsNewDocument() {
+      return signedIn() &&
              request.resource.data.userId == request.auth.uid;
     }
 
-    function isValidEmail(email) {
-      return email is string &&
-             email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    }
-
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-
-    function isAdmin() {
-      return isAuthenticated() &&
-        (
-          (request.auth.token.email == "saipavani175@gmail.com" &&
-           request.auth.token.email_verified == true)
-          ||
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"
-        );
-    }
-
-    // ===============================================================
-    // Validators
-    // ===============================================================
-
-    function isValidUser(data) {
-      return hasOnlyAllowedFields(
-               ['name', 'email', 'bio', 'joinedDate', 'preferences', 'role']
-             ) &&
-             data.name is string &&
-             data.name.size() > 0 &&
-             data.name.size() < 100 &&
-             isValidEmail(data.email) &&
-             data.joinedDate is timestamp;
-    }
-
-    function isValidHabit(data) {
-      return hasOnlyAllowedFields(
-               ['name', 'streak', 'completed', 'icon', 'color', 'userId', 'createdAt']
-             ) &&
-             data.name is string &&
-             data.name.size() > 0 &&
-             data.name.size() < 100 &&
-             data.streak is int &&
-             data.streak >= 0 &&
-             data.completed is bool &&
-             data.userId is string &&
-             data.createdAt is timestamp;
-    }
-
-    function isValidRoutineTask(data) {
-      return hasOnlyAllowedFields(
-               ['time', 'title', 'category', 'completed', 'priority', 'userId', 'createdAt']
-             ) &&
-             data.time is string &&
-             data.title is string &&
-             data.title.size() > 0 &&
-             data.title.size() < 200 &&
-             data.category in ['health', 'work', 'learning', 'personal'] &&
-             data.completed is bool &&
-             data.priority in ['low', 'medium', 'high'] &&
-             data.userId is string &&
-             data.createdAt is timestamp;
-    }
-
-    function isValidGoal(data) {
-      return hasOnlyAllowedFields(
-               ['title', 'description', 'progress', 'deadline', 'category', 'milestones', 'userId', 'createdAt']
-             ) &&
-             data.title is string &&
-             data.title.size() > 0 &&
-             data.title.size() < 200 &&
-             data.progress is int &&
-             data.progress >= 0 &&
-             data.progress <= 100 &&
-             data.userId is string &&
-             data.createdAt is timestamp;
-    }
-
-    function isValidJournal(data) {
-      return hasOnlyAllowedFields(
-               ['content', 'mood', 'tags', 'date', 'userId']
-             ) &&
-             data.content is string &&
-             data.content.size() > 0 &&
-             data.content.size() < 5000 &&
-             data.mood in ['great', 'good', 'okay', 'bad'] &&
-             data.userId is string &&
-             data.date is timestamp;
-    }
-
-    // ===============================================================
-    // Users
-    // ===============================================================
-
+    // User profile
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-
-      allow create: if isOwner(userId) &&
-                    isValidUser(request.resource.data) &&
-                    (
-                      request.resource.data.role == 'user' ||
-                      isAdmin()
-                    );
-
-      allow update: if isOwner(userId) &&
-                    isValidUser(request.resource.data) &&
-                    (
-                      request.resource.data.role == resource.data.role ||
-                      isAdmin()
-                    );
+      allow read, write: if ownsUser(userId);
     }
 
-    // ===============================================================
     // Habits
-    // ===============================================================
-
     match /habits/{habitId} {
-      allow read: if isDocOwner() || isAdmin();
-
-      allow create: if isNewDocOwner() &&
-                    isValidHabit(request.resource.data);
-
-      allow update: if isDocOwner() &&
-                    isNewDocOwner() &&
-                    isValidHabit(request.resource.data);
-
-      allow delete: if isDocOwner() || isAdmin();
+      allow read: if ownsDocument();
+      allow create: if ownsNewDocument();
+      allow update: if ownsDocument() && ownsNewDocument();
+      allow delete: if ownsDocument();
     }
 
-    // ===============================================================
-    // Routine Tasks
-    // ===============================================================
-
+    // Routine tasks
     match /routineTasks/{taskId} {
-      allow read: if isDocOwner() || isAdmin();
-
-      allow create: if isNewDocOwner() &&
-                    isValidRoutineTask(request.resource.data);
-
-      allow update: if isDocOwner() &&
-                    isNewDocOwner() &&
-                    isValidRoutineTask(request.resource.data);
-
-      allow delete: if isDocOwner() || isAdmin();
+      allow read: if ownsDocument();
+      allow create: if ownsNewDocument();
+      allow update: if ownsDocument() && ownsNewDocument();
+      allow delete: if ownsDocument();
     }
 
-    // ===============================================================
     // Goals
-    // ===============================================================
-
     match /goals/{goalId} {
-      allow read: if isDocOwner() || isAdmin();
-
-      allow create: if isNewDocOwner() &&
-                    isValidGoal(request.resource.data);
-
-      allow update: if isDocOwner() &&
-                    isNewDocOwner() &&
-                    isValidGoal(request.resource.data);
-
-      allow delete: if isDocOwner() || isAdmin();
+      allow read: if ownsDocument();
+      allow create: if ownsNewDocument();
+      allow update: if ownsDocument() && ownsNewDocument();
+      allow delete: if ownsDocument();
     }
 
-    // ===============================================================
     // Journals
-    // ===============================================================
-
     match /journals/{journalId} {
-      allow read: if isDocOwner() || isAdmin();
-
-      allow create: if isNewDocOwner() &&
-                    isValidJournal(request.resource.data);
-
-      allow update: if isDocOwner() &&
-                    isNewDocOwner() &&
-                    isValidJournal(request.resource.data);
-
-      allow delete: if isDocOwner() || isAdmin();
+      allow read: if ownsDocument();
+      allow create: if ownsNewDocument();
+      allow update: if ownsDocument() && ownsNewDocument();
+      allow delete: if ownsDocument();
     }
 
-    // ===============================================================
-    // Default deny
-    // ===============================================================
+    // Pomodoro focus sessions
+    match /focusSessions/{sessionId} {
+      allow read: if ownsDocument();
+      allow create: if ownsNewDocument();
+      allow update: if ownsDocument() && ownsNewDocument();
+      allow delete: if ownsDocument();
+    }
 
+    // Everything else is denied
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
+```
