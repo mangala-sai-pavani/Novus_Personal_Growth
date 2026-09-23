@@ -1,4 +1,3 @@
-```tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -1898,8 +1897,3 @@ function NavButton({ active, onClick, icon, label }: { active: boolean, onClick:
     </button>
   );
 }
-```
-
-**Important:** this `App.tsx` cleanup alone will **not** fix the Firestore `Missing or insufficient permissions` error. Your collection queries are already correct. The actual permission fix is in `firestore.rules`.
-
-If you want, paste your **current `firestore.rules` after publishing**, and I’ll rewrite **only that file** with the strictly required changes too.
