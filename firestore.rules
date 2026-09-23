@@ -1,76 +1,92 @@
-```text
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function ownsUser(userId) {
-      return signedIn() && request.auth.uid == userId;
-    }
-
-    function ownsDocument() {
-      return signedIn() &&
-             resource.data.userId == request.auth.uid;
-    }
-
-    function ownsNewDocument() {
-      return signedIn() &&
-             request.resource.data.userId == request.auth.uid;
-    }
-
-    // User profile
+    // Users
     match /users/{userId} {
-      allow read, write: if ownsUser(userId);
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
     }
 
     // Habits
-    match /habits/{habitId} {
-      allow read: if ownsDocument();
-      allow create: if ownsNewDocument();
-      allow update: if ownsDocument() && ownsNewDocument();
-      allow delete: if ownsDocument();
+    match /habits/{id} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
-    // Routine tasks
-    match /routineTasks/{taskId} {
-      allow read: if ownsDocument();
-      allow create: if ownsNewDocument();
-      allow update: if ownsDocument() && ownsNewDocument();
-      allow delete: if ownsDocument();
+    // Routine Tasks
+    match /routineTasks/{id} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
     // Goals
-    match /goals/{goalId} {
-      allow read: if ownsDocument();
-      allow create: if ownsNewDocument();
-      allow update: if ownsDocument() && ownsNewDocument();
-      allow delete: if ownsDocument();
+    match /goals/{id} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
     // Journals
-    match /journals/{journalId} {
-      allow read: if ownsDocument();
-      allow create: if ownsNewDocument();
-      allow update: if ownsDocument() && ownsNewDocument();
-      allow delete: if ownsDocument();
+    match /journals/{id} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
-    // Pomodoro focus sessions
-    match /focusSessions/{sessionId} {
-      allow read: if ownsDocument();
-      allow create: if ownsNewDocument();
-      allow update: if ownsDocument() && ownsNewDocument();
-      allow delete: if ownsDocument();
-    }
+    // Focus Sessions
+    match /focusSessions/{id} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
 
-    // Everything else is denied
-    match /{document=**} {
-      allow read, write: if false;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
   }
 }
-```
