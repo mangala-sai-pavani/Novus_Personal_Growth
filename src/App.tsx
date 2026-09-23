@@ -1,3 +1,4 @@
+```tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -61,8 +62,6 @@ import {
 import { 
   collection, 
   doc, 
-  getDoc, 
-  getDocs, 
   setDoc, 
   addDoc, 
   updateDoc, 
@@ -71,8 +70,7 @@ import {
   query, 
   where, 
   orderBy, 
-  Timestamp,
-  getDocFromServer
+  Timestamp
 } from 'firebase/firestore';
 
 // --- Error Handling ---
@@ -304,7 +302,7 @@ export default function App() {
       }
     };
 
-    const interval = setInterval(checkReminders, 60000); // Check every minute
+    const interval = setInterval(checkReminders, 60000);
     return () => clearInterval(interval);
   }, [routine, habits, remindersEnabled, user]);
 
@@ -318,17 +316,6 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-
-    const testConnection = async () => {
-      try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
-      } catch (error) {
-        if(error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
-        }
-      }
-    };
-    testConnection();
 
     // Fetch Profile
     const profileRef = doc(db, 'users', user.uid);
@@ -350,26 +337,46 @@ export default function App() {
     }, (err) => handleFirestoreError(err, OperationType.GET, `users/${user.uid}`, setAppError));
 
     // Fetch Habits
-    const habitsQuery = query(collection(db, 'habits'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    const habitsQuery = query(
+      collection(db, 'habits'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
     const unsubHabits = onSnapshot(habitsQuery, (snap) => {
       setHabits(snap.docs.map(d => ({ id: d.id, ...d.data() } as Habit)));
       setLoading(false);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'habits', setAppError));
 
     // Fetch Routine
-    const routineQuery = query(collection(db, 'routineTasks'), where('userId', '==', user.uid), orderBy('time', 'asc'));
+    const routineQuery = query(
+      collection(db, 'routineTasks'),
+      where('userId', '==', user.uid),
+      orderBy('time', 'asc')
+    );
+
     const unsubRoutine = onSnapshot(routineQuery, (snap) => {
       setRoutine(snap.docs.map(d => ({ id: d.id, ...d.data() } as RoutineTask)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'routineTasks', setAppError));
 
     // Fetch Goals
-    const goalsQuery = query(collection(db, 'goals'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    const goalsQuery = query(
+      collection(db, 'goals'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
     const unsubGoals = onSnapshot(goalsQuery, (snap) => {
       setGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as Goal)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'goals', setAppError));
 
     // Fetch Journals
-    const journalsQuery = query(collection(db, 'journals'), where('userId', '==', user.uid), orderBy('date', 'desc'));
+    const journalsQuery = query(
+      collection(db, 'journals'),
+      where('userId', '==', user.uid),
+      orderBy('date', 'desc')
+    );
+
     const unsubJournals = onSnapshot(journalsQuery, (snap) => {
       setJournals(snap.docs.map(d => ({ id: d.id, ...d.data() } as JournalEntry)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'journals', setAppError));
@@ -581,6 +588,7 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24">
       <Toaster position="top-center" richColors />
       {appError && <ErrorBoundary error={appError} />}
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -742,8 +750,6 @@ export default function App() {
                   ))}
                 </div>
               </section>
-
-              {/* Streak Section Removed from here and moved up */}
 
               {/* Quick Actions */}
               <div className="fixed bottom-24 right-6 flex flex-col gap-3 items-end z-50">
@@ -976,7 +982,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Date Selector */}
               <div className="flex justify-between items-center bg-white p-2 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto no-scrollbar">
                 {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
                   <div key={i} className={cn(
@@ -1140,14 +1145,12 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Pomodoro Timer Integration */}
               <PomodoroTimer 
                 userId={user.uid} 
                 routineTasks={routine} 
                 onCompleteTask={toggleRoutineTask} 
               />
 
-              {/* Planner Tabs */}
               <div className="bg-gray-100 p-1 rounded-2xl flex gap-1">
                 {(['today', 'tomorrow', 'week'] as const).map(tab => (
                   <button
@@ -1163,7 +1166,6 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Filters & View Toggle */}
               <div className="flex justify-between items-center">
                 <div className="bg-gray-100 p-1 rounded-xl flex gap-1">
                   <button 
@@ -1423,7 +1425,6 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Habit Completion Trend */}
                 <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Habit Consistency</h3>
                   <div className="h-[300px] w-full">
@@ -1454,7 +1455,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Goal Progress */}
                 <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Goal Trajectory</h3>
                   <div className="h-[300px] w-full">
@@ -1479,7 +1479,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Mood Distribution */}
                 <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm lg:col-span-2">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Mood Trends (Last 7 Entries)</h3>
                   <div className="h-[300px] w-full">
@@ -1899,3 +1898,8 @@ function NavButton({ active, onClick, icon, label }: { active: boolean, onClick:
     </button>
   );
 }
+```
+
+**Important:** this `App.tsx` cleanup alone will **not** fix the Firestore `Missing or insufficient permissions` error. Your collection queries are already correct. The actual permission fix is in `firestore.rules`.
+
+If you want, paste your **current `firestore.rules` after publishing**, and I’ll rewrite **only that file** with the strictly required changes too.
